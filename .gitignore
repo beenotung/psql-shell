@@ -1,0 +1,10 @@
+node_modules/
+*-lock.json
+*-lock.yaml
+*.lock
+.*-debug.log
+*.tsbuildinfo
+dist/
+*.tgz
+.env
+.DS_Store

@@ -9,6 +9,16 @@ psql shell that can display Chinese words (unicode) in windows powershell
 - `psql-shell`
 - `psql` (alias)
 
+## Supported Commands
+
+- `\l` (list all databases)
+- `\c database` (connect to the database)
+- `\d` (list all tables)
+- `\d+` (list each table name with row count)
+- `\d table` (show table schema)
+- `\q` (quit)
+- `query;` (run sql query)
+
 ## Installation (optional)
 
 ```bash

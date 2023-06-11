@@ -18,6 +18,13 @@
     "url": "https://github.com/beenotung/psql-shell/issues"
   },
   "main": "index.js",
+  "bin": {
+    "psql-shell": "dist/cli.js",
+    "psql": "dist/cli.js"
+  },
+  "files": [
+    "dist/cli.js"
+  ],
   "scripts": {
     "test": "tsc --noEmit",
     "build": "tsc -p ."

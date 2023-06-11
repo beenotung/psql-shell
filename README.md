@@ -4,6 +4,11 @@ psql shell that can display Chinese words (unicode) in windows powershell
 
 [![npm Package Version](https://img.shields.io/npm/v/psql-shell)](https://www.npmjs.com/package/psql-shell)
 
+## npx cli
+
+- psql-shell
+- psql (alias)
+
 ## Installation (optional)
 
 ```bash

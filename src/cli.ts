@@ -86,9 +86,12 @@ async function main() {
       return knex
     }
 
+    let text = ''
     for (;;) {
-      let text = await ask(`${database}=# `)
-      if (!text.trim()) continue
+      text += ' '
+      text += await ask(`${database}=# `)
+      text = text.trim()
+      if (!text) continue
       if (text.startsWith('\\q')) break
       if (text.startsWith('\\c')) {
         let db = text.match(/\\c ([\w-_]+)/)?.[1]
@@ -101,10 +104,29 @@ async function main() {
         console.log(
           `You are now connected to database "${database}" as user "${user}"`,
         )
+        text = ''
         continue
       }
       if (text.startsWith('\\l')) {
         await querySingleColumn(/* sql */ `select datname from pg_database`)
+        text = ''
+        continue
+      }
+      if (text.startsWith('\\d+')) {
+        let result = await client.query(/* sql */ `
+select tablename
+from pg_tables
+where pg_tables.schemaname = 'public'
+`)
+        let tables = result.rows
+        for (let { tablename } of tables) {
+          result = await client.query(/* sql */ `
+select count(*) as count from "${tablename}"
+`)
+          let count = result.rows[0].count
+          console.log({ tablename, count })
+        }
+        text = ''
         continue
       }
       if (text.startsWith('\\d')) {
@@ -114,6 +136,7 @@ async function main() {
           let table = tables.find(table => table.name === tableName)
           if (!table) {
             console.log(`Did not find any relation named "${tableName}".`)
+            text = ''
             continue
           }
           console.log(tableToString(table).trim())
@@ -122,9 +145,17 @@ async function main() {
             /* sql */ `select tablename from pg_tables where schemaname = 'public'`,
           )
         }
+        text = ''
         continue
       }
-      console.log('unknown command:', text)
+      if (text.endsWith(';')) {
+        let result = await client.query(text)
+        console.log(result.rows)
+        console.log(result.rowCount, 'rows')
+        text = ''
+        continue
+      }
+      // console.log('unknown command:', text)
     }
   } catch (error) {
     console.error(error)

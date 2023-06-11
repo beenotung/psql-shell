@@ -6,8 +6,8 @@ psql shell that can display Chinese words (unicode) in windows powershell
 
 ## npx cli
 
-- psql-shell
-- psql (alias)
+- `psql-shell`
+- `psql` (alias)
 
 ## Installation (optional)
 

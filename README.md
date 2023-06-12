@@ -43,16 +43,26 @@ npx -y psql-shell
 
 The connection credential, e.g. username, password, and database name are loaded in multiple places, including:
 
+- command line arguments
 - environment variables
 - .env file
 - ask from cli interactively
+
+Name of arguments:
+
+- `-d` database name (`-d` is optional)
+- `-U` user name (`-U` is optional after database name)
+- `-h` database server host (default: localhost)
+- `-P` database server port (default: 5432)
+
+(`-W` and `-w` are ignored)
 
 Name of environment variables:
 
 - `DB_NAME`
 - `DB_USER` or `DB_USERNAME`
 - `DB_PASS` or `DB_PASSWORD`
-- `DB_HOST` or `DB_HOSTNAME` (default: "localhost")
+- `DB_HOST` or `DB_HOSTNAME` (default: localhost)
 - `DB_PORT` (default: 5432)
 
 ## License

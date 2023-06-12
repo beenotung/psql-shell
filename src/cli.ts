@@ -7,6 +7,74 @@ import Knex, { Knex as KnexType } from 'knex'
 import { scanPGTableSchema } from 'quick-erd/dist/db/pg-to-text'
 import { tableToString } from 'quick-erd/dist/core/table'
 
+function parseArgs() {
+  let database: string | undefined
+  let user: string | undefined
+  let password: string | undefined | null
+  let host = 'localhost'
+  let port = 5432
+  for (let i = 2; i < process.argv.length; i++) {
+    let arg = process.argv[i]
+    switch (arg) {
+      case '-d':
+        i++
+        database = process.argv[i]
+        if (!database) {
+          console.error('Missing database name in argument.')
+          process.exit(1)
+        }
+        break
+      case '-U': {
+        i++
+        user = process.argv[i]
+        if (!user) {
+          console.error('Missing user name in argument.')
+          process.exit(1)
+        }
+        break
+      }
+      case '-h': {
+        i++
+        host = process.argv[i]
+        if (!host) {
+          console.error('Missing database server host in argument.')
+          process.exit(1)
+        }
+        break
+      }
+      case '-P': {
+        i++
+        port = +process.argv[i]
+        if (!port) {
+          console.error('Missing database server port in argument.')
+          process.exit(1)
+        }
+        break
+      }
+      case '-w': {
+        console.log('database password is required')
+        break
+      }
+      case '-W': {
+        break
+      }
+      default: {
+        if (!database) {
+          database = arg
+          break
+        }
+        if (!user) {
+          user = arg
+          break
+        }
+        console.error('Extra argument:', process.argv.slice(i))
+        process.exit(1)
+      }
+    }
+  }
+  return { database, user, password, host, port }
+}
+
 async function main() {
   let io: Interface = readline.createInterface({
     input: process.stdin,
@@ -24,34 +92,35 @@ async function main() {
   async function getConnection() {
     config()
 
-    let database = process.env.DB_NAME || (await ask('database name: '))
+    let { database, user, password, host, port } = parseArgs()
+
+    database ||= process.env.DB_NAME || (await ask('database name: '))
     if (!database) throw new Error('missing database name')
 
-    let user =
+    user ||=
       process.env.DB_USER ||
       process.env.DB_USERNAME ||
       (await ask(`database user (default ${database}): `)) ||
       database
     if (!user) throw new Error('missing database user')
 
-    let password =
+    password ||=
       process.env.DB_PASSWORD ||
       process.env.DB_PASS ||
       (await ask(`database password (default ${user}): `)) ||
       user
     if (!password) throw new Error('missing database password')
 
-    let host =
+    host ||=
       process.env.DB_HOST ||
       process.env.DB_HOSTNAME ||
       (await ask('database host (default localhost): ')) ||
       'localhost'
 
-    let portStr =
-      process.env.DB_PORT ||
-      (await ask('database port (default 5432): ')) ||
-      '5432'
-    let port = +portStr
+    port ||=
+      +process.env.DB_PORT! ||
+      +(await ask('database port (default 5432): ')) ||
+      5432
 
     let client = new pg.Client({ database, user, password, host, port })
     await client.connect()

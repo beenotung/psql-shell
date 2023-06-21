@@ -157,74 +157,82 @@ async function main() {
 
     let text = ''
     for (;;) {
-      text += ' '
-      text += await ask(`${database}=# `)
-      text = text.trim()
-      if (!text) continue
-      if (text.startsWith('\\q')) break
-      if (text.startsWith('\\c')) {
-        let db = text.match(/\\c ([\w-_]+)/)?.[1]
-        if (db) {
-          client.end()
-          database = db
-          client = new pg.Client({ database, user, password, host, port })
-          await client.connect()
+      try {
+        text += ' '
+        text += await ask(`${database}=# `)
+        text = text.trim()
+        if (!text) continue
+        if (text.startsWith('\\q')) break
+        if (text.startsWith('\\c')) {
+          let db = text.match(/\\c ([\w-_]+)/)?.[1]
+          if (db) {
+            client.end()
+            database = db
+            client = new pg.Client({ database, user, password, host, port })
+            await client.connect()
+          }
+          console.log(
+            `You are now connected to database "${database}" as user "${user}"`,
+          )
+          text = ''
+          continue
         }
-        console.log(
-          `You are now connected to database "${database}" as user "${user}"`,
-        )
-        text = ''
-        continue
-      }
-      if (text.startsWith('\\l')) {
-        await querySingleColumn(/* sql */ `select datname from pg_database`)
-        text = ''
-        continue
-      }
-      if (text.startsWith('\\d+')) {
-        let result = await client.query(/* sql */ `
+        if (text.startsWith('\\l')) {
+          await querySingleColumn(/* sql */ `select datname from pg_database`)
+          text = ''
+          continue
+        }
+        if (text.startsWith('\\d+')) {
+          let result = await client.query(/* sql */ `
 select tablename
 from pg_tables
 where pg_tables.schemaname = 'public'
 `)
-        let tables = result.rows
-        for (let { tablename } of tables) {
-          result = await client.query(/* sql */ `
+          let tables = result.rows
+          for (let { tablename } of tables) {
+            result = await client.query(/* sql */ `
 select count(*) as count from "${tablename}"
 `)
-          let count = result.rows[0].count
-          console.log({ tablename, count })
-        }
-        text = ''
-        continue
-      }
-      if (text.startsWith('\\d')) {
-        let tableName = text.replace('\\d', '').replace(';', '').trim()
-        if (tableName) {
-          let tables = await scanPGTableSchema(getKnex())
-          let table = tables.find(table => table.name === tableName)
-          if (!table) {
-            console.log(`Did not find any relation named "${tableName}".`)
-            text = ''
-            continue
+            let count = result.rows[0].count
+            console.log({ tablename, count })
           }
-          console.log(tableToString(table).trim())
-        } else {
-          await querySingleColumn(
-            /* sql */ `select tablename from pg_tables where schemaname = 'public'`,
-          )
+          text = ''
+          continue
         }
+        if (text.startsWith('\\d')) {
+          let tableName = text.replace('\\d', '').replace(';', '').trim()
+          if (tableName) {
+            let tables = await scanPGTableSchema(getKnex())
+            let table = tables.find(table => table.name === tableName)
+            if (!table) {
+              console.log(`Did not find any relation named "${tableName}".`)
+              text = ''
+              continue
+            }
+            console.log(tableToString(table).trim())
+          } else {
+            await querySingleColumn(
+              /* sql */ `select tablename from pg_tables where schemaname = 'public'`,
+            )
+          }
+          text = ''
+          continue
+        }
+        if (text.endsWith(';')) {
+          let result = await client.query(text)
+          console.dir(result.rows, { depth: 20 })
+          console.log(result.rowCount, 'rows')
+          text = ''
+          continue
+        }
+        // console.log('unknown command:', text)
+      } catch (error) {
+        console.error({
+          query: text,
+          error,
+        })
         text = ''
-        continue
       }
-      if (text.endsWith(';')) {
-        let result = await client.query(text)
-        console.log(result.rows)
-        console.log(result.rowCount, 'rows')
-        text = ''
-        continue
-      }
-      // console.log('unknown command:', text)
     }
   } catch (error) {
     console.error(error)

@@ -26,6 +26,7 @@
     "dist/cli.js"
   ],
   "scripts": {
+    "start": "ts-node src/cli.ts",
     "test": "tsc --noEmit",
     "build": "tsc -p ."
   },

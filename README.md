@@ -1,8 +1,14 @@
 # psql-shell
 
-psql shell that can display Chinese words (unicode) in windows powershell
+Enhanced postgres shell with better support for PowerShell and JSON.
 
 [![npm Package Version](https://img.shields.io/npm/v/psql-shell)](https://www.npmjs.com/package/psql-shell)
+
+## Features
+
+- Able to display all Chinese characters (unicode) in Windows PowerShell
+- Display aggregated result in prettified JSON format
+- Load database credential from .env or cli
 
 ## npx cli
 

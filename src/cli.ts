@@ -80,12 +80,24 @@ function parseArgs() {
   return { database, user, password, host, port }
 }
 
+function createDefer<T>() {
+  let defer = {
+    resolve(data: T) {},
+    reject(error: any) {},
+  }
+  let promise = new Promise<T>((resolve, reject) => {
+    defer.resolve = resolve
+    defer.reject = reject
+  })
+  return Object.assign(defer, { promise })
+}
+
 async function main() {
   let io: Interface = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
   })
-  let client: pg.Client | undefined
+  let clientDefer = createDefer<pg.Client>()
   let knex: KnexType | undefined
 
   function ask(query: string) {
@@ -135,11 +147,12 @@ async function main() {
 
   try {
     let connection = await getConnection()
-    client = connection.client
+    clientDefer.resolve(connection.client)
     let { database, user, password, host, port } = connection
 
     async function querySingleColumn(sql: string) {
-      let result = await client!.query(sql)
+      let client = await clientDefer.promise
+      let result = await client.query(sql)
       let field = result.fields[0].name
       console.log(result.rows.map(row => row[field]).join(', '))
     }
@@ -161,33 +174,41 @@ async function main() {
     }
 
     let text = ''
-    for (;;) {
+    function loop() {
+      io.question(`${database}=# `, answer => {
+        text = (text + '\n' + answer).trim()
+        if (text.startsWith('\\q')) return end()
+        onLine()
+        loop()
+      })
+    }
+    loop()
+
+    async function onLine() {
       try {
-        text += ' '
-        text += await ask(`${database}=# `)
-        text = text.trim()
-        if (!text) continue
-        if (text.startsWith('\\q')) break
         if (text.startsWith('\\c')) {
           let db = text.match(/\\c ([\w-_]+)/)?.[1]
           if (db) {
-            client.end()
+            clientDefer.promise.then(client => client.end())
             database = db
-            client = new pg.Client({ database, user, password, host, port })
+            let client = new pg.Client({ database, user, password, host, port })
+            clientDefer = createDefer()
+            clientDefer.resolve(client)
             await client.connect()
           }
           console.log(
             `You are now connected to database "${database}" as user "${user}"`,
           )
           text = ''
-          continue
+          return
         }
         if (text.startsWith('\\l')) {
           await querySingleColumn(/* sql */ `select datname from pg_database`)
           text = ''
-          continue
+          return
         }
         if (text.startsWith('\\d+')) {
+          let client = await clientDefer.promise
           let result = await client.query(/* sql */ `
 select tablename
 from pg_tables
@@ -202,7 +223,7 @@ select count(*) as count from "${tablename}"
             console.log({ tablename, count })
           }
           text = ''
-          continue
+          return
         }
         if (text.startsWith('\\d')) {
           let tableName = text.replace('\\d', '').replace(';', '').trim()
@@ -212,7 +233,7 @@ select count(*) as count from "${tablename}"
             if (!table) {
               console.log(`Did not find any relation named "${tableName}".`)
               text = ''
-              continue
+              return
             }
             console.log(tableToString(table).trim())
           } else {
@@ -221,14 +242,15 @@ select count(*) as count from "${tablename}"
             )
           }
           text = ''
-          continue
+          return
         }
         if (text.endsWith(';')) {
+          let client = await clientDefer.promise
           let result = await client.query(text)
           console.dir(result.rows, { depth: 20 })
           console.log(result.rowCount, 'rows')
           text = ''
-          continue
+          return
         }
         // console.log('unknown command:', text)
       } catch (error) {
@@ -239,12 +261,14 @@ select count(*) as count from "${tablename}"
         text = ''
       }
     }
+
+    function end() {
+      io.close()
+      clientDefer.promise.then(client => client.end())
+      knex?.destroy()
+    }
   } catch (error) {
     console.error(error)
-  } finally {
-    io.close()
-    client?.end()
-    knex?.destroy()
   }
 }
 main()

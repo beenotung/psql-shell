@@ -245,10 +245,17 @@ select count(*) as count from "${tablename}"
           return
         }
         if (text.endsWith(';')) {
-          let client = await clientDefer.promise
-          let result = await client.query(text)
-          console.dir(result.rows, { depth: 20 })
-          console.log(result.rowCount, 'rows')
+          if (text.startsWith('knex')) {
+            let knex = getKnex()
+            let rows = await eval(text)
+            console.dir(rows, { depth: 20 })
+            console.log(rows.length, 'rows')
+          } else {
+            let client = await clientDefer.promise
+            let result = await client.query(text)
+            console.dir(result.rows, { depth: 20 })
+            console.log(result.rowCount, 'rows')
+          }
           text = ''
           return
         }

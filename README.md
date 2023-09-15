@@ -9,6 +9,7 @@ Enhanced postgres shell with better support for PowerShell and JSON.
 - Able to display all Chinese characters (unicode) in Windows PowerShell
 - Display aggregated result in prettified JSON format
 - Load database credential from .env or cli
+- support running SQL and Knex queries
 
 ## npx cli
 

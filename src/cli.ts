@@ -175,17 +175,18 @@ async function main() {
 
     let text = ''
     function loop() {
-      io.question(``, answer => {
+      io.question(`${database}=# `, answer => {
         text = (text + '\n' + answer).trim()
         if (text.startsWith('\\q')) return end()
-        onLine().then(() => {
-          process.stdout.write(`${database}=# `)
+        onLine().then(result => {
+          if (result != 'not-executed') {
+            process.stdout.write(`${database}=# `)
+          }
         })
         loop()
       })
     }
     loop()
-    process.stdout.write(`${database}=# `)
 
     async function onLine() {
       try {
@@ -263,6 +264,7 @@ select count(*) as count from "${tablename}"
           return
         }
         // console.log('unknown command:', text)
+        return 'not-executed'
       } catch (error) {
         console.error({
           query: text,

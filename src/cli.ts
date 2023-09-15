@@ -175,14 +175,17 @@ async function main() {
 
     let text = ''
     function loop() {
-      io.question(`${database}=# `, answer => {
+      io.question(``, answer => {
         text = (text + '\n' + answer).trim()
         if (text.startsWith('\\q')) return end()
-        onLine()
+        onLine().then(() => {
+          process.stdout.write(`${database}=# `)
+        })
         loop()
       })
     }
     loop()
+    process.stdout.write(`${database}=# `)
 
     async function onLine() {
       try {

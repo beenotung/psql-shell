@@ -154,7 +154,7 @@ async function main() {
       let client = await clientDefer.promise
       let result = await client.query(sql)
       let field = result.fields[0].name
-      console.log(result.rows.map(row => row[field]).join(', '))
+      showOutput(result.rows.map(row => row[field]).join(', '))
     }
 
     function getKnex() {
@@ -188,6 +188,21 @@ async function main() {
     }
     loop()
 
+    function erasePrompt() {
+      process.stdout.write(`\r${' '.repeat(`${database}=# `.length)}\r`)
+    }
+
+    function showOutput(message: any) {
+      erasePrompt()
+      console.log(message)
+    }
+
+    function showRows(rows: object[]) {
+      erasePrompt()
+      console.dir(rows, { depth: 20 })
+      console.log(rows.length, 'rows')
+    }
+
     async function onLine() {
       try {
         if (text.startsWith('\\c')) {
@@ -200,7 +215,7 @@ async function main() {
             clientDefer.resolve(client)
             await client.connect()
           }
-          console.log(
+          showOutput(
             `You are now connected to database "${database}" as user "${user}"`,
           )
           text = ''
@@ -224,7 +239,7 @@ where pg_tables.schemaname = 'public'
 select count(*) as count from "${tablename}"
 `)
             let count = result.rows[0].count
-            console.log({ tablename, count })
+            showOutput({ tablename, count })
           }
           text = ''
           return
@@ -235,11 +250,11 @@ select count(*) as count from "${tablename}"
             let tables = await scanPGTableSchema(getKnex())
             let table = tables.find(table => table.name === tableName)
             if (!table) {
-              console.log(`Did not find any relation named "${tableName}".`)
+              showOutput(`Did not find any relation named "${tableName}".`)
               text = ''
               return
             }
-            console.log(tableToString(table).trim())
+            showOutput(tableToString(table).trim())
           } else {
             await querySingleColumn(
               /* sql */ `select tablename from pg_tables where schemaname = 'public'`,
@@ -252,13 +267,11 @@ select count(*) as count from "${tablename}"
           if (text.startsWith('knex')) {
             let knex = getKnex()
             let rows = await eval(text)
-            console.dir(rows, { depth: 20 })
-            console.log(rows.length, 'rows')
+            showRows(rows)
           } else {
             let client = await clientDefer.promise
             let result = await client.query(text)
-            console.dir(result.rows, { depth: 20 })
-            console.log(result.rowCount, 'rows')
+            showRows(result.rows)
           }
           text = ''
           return
@@ -266,6 +279,7 @@ select count(*) as count from "${tablename}"
         // console.log('unknown command:', text)
         return 'not-executed'
       } catch (error) {
+        erasePrompt()
         console.error({
           query: text,
           error,

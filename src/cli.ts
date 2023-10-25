@@ -111,10 +111,14 @@ async function main() {
 
     let { database, user, password, host, port } = parseArgs()
 
-    database ||= process.env.DB_NAME || (await ask('database name: '))
+    database ||=
+      process.env.POSTGRES_DB ||
+      process.env.DB_NAME ||
+      (await ask('database name: '))
     if (!database) throw new Error('missing database name')
 
     user ||=
+      process.env.POSTGRES_USER ||
       process.env.DB_USER ||
       process.env.DB_USERNAME ||
       (await ask(`database user (default ${database}): `)) ||
@@ -122,6 +126,7 @@ async function main() {
     if (!user) throw new Error('missing database user')
 
     password ||=
+      process.env.POSTGRES_PASSWORD ||
       process.env.DB_PASSWORD ||
       process.env.DB_PASS ||
       (await ask(`database password (default ${user}): `)) ||

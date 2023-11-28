@@ -219,6 +219,10 @@ async function main() {
             clientDefer = createDefer()
             clientDefer.resolve(client)
             await client.connect()
+            if (knex) {
+              await knex.destroy()
+              knex = undefined
+            }
           }
           showOutput(
             `You are now connected to database "${database}" as user "${user}"`,

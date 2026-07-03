@@ -26,6 +26,15 @@ function parseArgs() {
         console.log(text)
         process.exit(0)
       }
+      case '--version': {
+        let file = join(rootDir, 'package.json')
+        let text = readFileSync(file, 'utf-8')
+        let pkg = JSON.parse(text)
+        let name = pkg.name
+        let version = pkg.version
+        console.log(`${name} v${version}`)
+        process.exit(0)
+      }
       case '-d':
         i++
         database = process.argv[i]

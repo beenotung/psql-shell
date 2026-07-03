@@ -9,6 +9,8 @@ import { tableToString } from 'quick-erd/dist/core/table'
 import { readFile, readFileSync } from 'fs'
 import { join } from 'path'
 
+let rootDir = join(__dirname, '..')
+
 function parseArgs() {
   let database: string | undefined
   let user: string | undefined
@@ -18,9 +20,12 @@ function parseArgs() {
   for (let i = 2; i < process.argv.length; i++) {
     let arg = process.argv[i]
     switch (arg) {
-      case '--help':
-        console.log(readFileSync(join(__dirname, '..', 'README.md')).toString())
+      case '--help': {
+        let file = join(rootDir, 'README.md')
+        let text = readFileSync(file, 'utf-8')
+        console.log(text)
         process.exit(0)
+      }
       case '-d':
         i++
         database = process.argv[i]

@@ -6,7 +6,7 @@ import readline, { Interface } from 'readline'
 import Knex, { Knex as KnexType } from 'knex'
 import { scanPGTableSchema } from 'quick-erd/dist/db/pg-to-text'
 import { tableToString } from 'quick-erd/dist/core/table'
-import { readFile, readFileSync } from 'fs'
+import { readFileSync } from 'fs'
 import { join } from 'path'
 
 let rootDir = join(__dirname, '..')
